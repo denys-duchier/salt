@@ -330,14 +330,16 @@ def get_resources_storage(call=None, resFilter=None):
         salt-cloud -f get_resources_storage my-proxmox-config
     '''
     log.debug('Getting resource: storage.. (filter: {0})'.format(resFilter))
-    resources = query('get', 'cluster/resources')
-
-    ret = [r for r in resources if r.get('type', None) == 'storage']
+    nodes = get_resources_nodes(call=call, resFilter=resFilter)
+    ret = {}
+    for node in nodes:
+        name = node["node"]
+        ret[name] = query('get', 'nodes/%s/storage' % name)
 
     if resFilter is not None:
         log.debug('Filter given: {0}, returning requested '
                   'resource: storage'.format(resFilter))
-        return [r for r in ret if r["node"] ==resFilter]
+        return {name:ret[name]}
 
     log.debug('Filter not given: {0}, returning all resources: storage'.format(ret))
     return ret
