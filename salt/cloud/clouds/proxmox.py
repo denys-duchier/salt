@@ -320,6 +320,29 @@ def get_resources_vms(call=None, resFilter=None, includeConfig=True):
     return ret
 
 
+def get_resources_storage(call=None, resFilter=None):
+    '''
+    Retrieve all storage devices available in this environment
+
+    CLI Example:
+
+    .. code-block:: bash
+        salt-cloud -f get_resources_storage my-proxmox-config
+    '''
+    log.debug('Getting resource: storage.. (filter: {0})'.format(resFilter))
+    resources = query('get', 'cluster/resources')
+
+    ret = [r for r in resource if r.get('type', None) == 'storage']
+
+    if resFilter is not None:
+        log.debug('Filter given: {0}, returning requested '
+                  'resource: storage'.format(resFilter))
+        return [r for r in ret if r["node"] ==resFilter]
+
+    log.debug('Filter not given: {0}, returning all resources: storage'.format(ret))
+    return ret
+
+
 def script(vm_):
     '''
     Return the script deployment object
