@@ -332,7 +332,7 @@ def get_resources_storage(call=None, resFilter=None):
     log.debug('Getting resource: storage.. (filter: {0})'.format(resFilter))
     resources = query('get', 'cluster/resources')
 
-    ret = [r for r in resource if r.get('type', None) == 'storage']
+    ret = [r for r in resources if r.get('type', None) == 'storage']
 
     if resFilter is not None:
         log.debug('Filter given: {0}, returning requested '
