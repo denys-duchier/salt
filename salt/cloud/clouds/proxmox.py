@@ -485,7 +485,7 @@ def get_storage(call=None):
         log.debug('Getting the list of storage endpoints on {0}'.format(name))
         ret[name] = {s["storage"]:s for s in query('get', 'nodes/%s/storage' % name)}
 
-    lof.debug('Returning all storage endpoints: {0}'.format(ret))
+    log.debug('Returning all storage endpoints: {0}'.format(ret))
     return ret
 
 
