@@ -320,32 +320,6 @@ def get_resources_vms(call=None, resFilter=None, includeConfig=True):
     return ret
 
 
-def get_resources_storage(call=None, resFilter=None):
-    '''
-    Retrieve all storage devices available in this environment
-
-    CLI Example:
-
-    .. code-block:: bash
-        salt-cloud -f get_resources_storage my-proxmox-config
-    '''
-    log.debug('Getting resource: storage.. (filter: {0})'.format(resFilter))
-    nodes = [r for r in query('get', 'cluster/resources') if r.get('type', None) == 'node']
-
-    ret = {}
-    for node in nodes:
-        name = node["node"]
-        ret[name] = {s["storage"]:s for s in query('get', 'nodes/%s/storage' % name)}
-
-    if resFilter is not None:
-        log.debug('Filter given: {0}, returning requested '
-                  'resource: storage'.format(resFilter))
-        return {name:ret[name]}
-
-    log.debug('Filter not given: {0}, returning all resources: storage'.format(ret))
-    return ret
-
-
 def script(vm_):
     '''
     Return the script deployment object
@@ -491,6 +465,68 @@ def list_nodes_select(call=None):
     return salt.utils.cloud.list_nodes_select(
         list_nodes_full(), __opts__['query.selection'], call,
     )
+
+
+def get_storage(call=None):
+    '''
+    Return a list of the storage endpoints available on the provider
+
+    CLI Example:
+
+    .. code-block:: bash
+        salt-cloud -f get_storage my-proxmox-config
+    '''
+    log.debug('Getting the list of nodes.')
+    nodes = [r for r in query('get', 'cluster/resources') if r.get('type', None) == 'node']
+
+    ret = {}
+    for node in nodes:
+        name = node["node"]
+        log.debug('Getting the list of storage endpoints on {0}'.format(name))
+        ret[name] = {s["storage"]:s for s in query('get', 'nodes/%s/storage' % name)}
+
+    lof.debug('Returning all storage endpoints: {0}'.format(ret))
+    return ret
+
+
+def create_disk(name, call=None, kwargs={}):
+    '''
+    create a disk for a VM
+    '''
+    err = None
+    if call != 'action':
+        err = 'The create_disk action must be called with -a or --action.'
+    elif 'node' not in kwargs:
+        err = 'The create_disk action requires a "node" kwarg to identify the hypervisor node.'
+    elif 'storage' not in kwargs:
+        err = 'The create_disk action requires a "storage" kwarg to identify the storage endpoint.'
+    elif 'filename' not in kwargs:
+        err = 'The create_disk action requires a "filename" kwarg to name of the disk.'
+    elif 'vmid' not in kwargs:
+        err = 'The create_disk action requires a "vmid" to identify the VM.'
+
+    if err is not None:
+        raise SaltCloudSystemExit(err)
+
+    node     = kwargs["node"]
+    storage  = kwargs["storage"]
+    filename = kwargs["filename"]
+    format   = kwargs.get("format", "raw")
+    size     = kwargs.get("size", "32G")
+    vmid     = kwargs["vmid"]
+
+    option   = 'nodes/{0}/storage/{1}/content'.format(node, storage)
+    data     = {
+        'node'    : node    ,
+        'storage' : storage ,
+        'filename': filename,
+        'format'  : format  ,
+        'size'    : size    ,
+        'vmid'    : vmid    ,
+    }
+    
+    disk = query('post', option, data)
+    return disk
 
 
 def create(vm_):
